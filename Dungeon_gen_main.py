@@ -11,12 +11,12 @@ class Entity:
         self.Ename = Ename
 
     def ShowStats(self):
-        print('Name: ')
+        print('Name: ', self.Ename)
         print('Type: ', self.Etype)
         print('Status: ', self.status)
         print('Health: ', self.health)
         print('Buffs/Debuffs: ', self.modifiers)
-        
+
     def MoveEntity(self, newpos: tuple):
         '''
         Used to move an entity
@@ -25,11 +25,11 @@ class Entity:
         Returns
         None
         '''
-        assert len(newpos) == 2; raise "ErrorCode: invalid_coordinates_format"
-        assert newpos[0] <= 10 or newpos[0] >= 0; raise "ErrorCode: invalid_x_coordinates" 
-        assert newpos[1] <= 10 or newpos[1] >= 0; raise "ErrorCode: invalid_y_coordinates"
+        assert len(newpos) == 2, "ErrorCode: invalid_coordinates_format"
+        assert newpos[0] <= 10, "ErrorCode: invalid_x_coordinates"
+        assert newpos[1] <= 10, "ErrorCode: invalid_y_coordinates"
         self.position = newpos
-        
+
     def EntityUpdate(self):
         pass
 
@@ -44,7 +44,11 @@ class Room:
     def ShowStats(self):
         print('Type de la pièce: ', self.rtype)
         print('Position dans le donjon: ', self.position)
-        print('Entités presentes dans la pièce: ', self.contents)
+        print('Entités presentes dans la pièce: ')
+        print('')
+        for i in range(len(self.contents)):
+            self.contents[i].ShowStats()
+            print('')
         print('Numero de la pièce: ', self.name)
 
     def AddDoor(self, ori: str):
@@ -85,21 +89,24 @@ class Room:
         None.
 
         '''
-        assert etype <= 0; raise "ErrorCode: invalid_entity_type"
-        assert pos[0] <= 10 or pos[0] >= 0; raise "ErrorCode: invalid_x_coordinate"
-        assert pos[1] <= 10 or pos[1] >= 0; raise "ErrorCode: invalid_y_coordinate"
+        assert etype <= 0, "ErrorCode: invalid_entity_type"
+
+        assert 0 <= pos[0] <= 10, "ErrorCode: invalid_x_coordinate"
+
+        assert 0 <= pos[1] <= 10, "ErrorCode: invalid_y_coordinate"
         new_entity = Entity(etype, pos, name)
         self.contents.append(new_entity)
 
 
 class Dungeon:
     '''
-    To get the Stats of a room in a dungeon, 
+    To get the Stats of a room in a dungeon,
     use command [name of dungeon].rooms[index of room (which is number of the room-1)].ShowStats()
     example:
         to get the stats of the room number 6 in dungeon "X":
             X.rooms[5].ShowStats()
     '''
+
     def __init__(self, size: int, diff: int):
         self.Dsize = size
         self.Ddiff = diff
@@ -124,16 +131,17 @@ class Dungeon:
         None.
 
         '''
-        if self.RoomGenDone == False:
+        if not self.RoomGenDone:
             for i in range(self.NumberRooms):
                 roomX = Room(randint(0, 6), (None, None), str("Room " + str(i + 1)))
                 self.rooms.append(roomX)
         self.RoomGenDone = True
 
     def MapGen(self):
+        '''
+        Generates the dungeon map links, giving the global form of the dungeon
+        '''
         pass
-    
-    
-    
-    
-B = Dungeon(5,5)
+
+
+B = Dungeon(5, 5)
