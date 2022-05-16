@@ -1,11 +1,13 @@
 from random import randint
+from time import sleep
+import matplotlib.pyplot as plt
 
 
 class Entity:
-    def __init__(self, Etype: int, pos: tuple, Ename: str):
+    def __init__(self, Etype: int, pos: tuple, Ename: str, stats: dict):
         self.Etype = Etype
-        self.status = ''
-        self.health = None
+        self.status = []
+        self.stats = stats
         self.modifiers = []
         self.position = pos
         self.Ename = Ename
@@ -14,7 +16,7 @@ class Entity:
         print('Name: ', self.Ename)
         print('Type: ', self.Etype)
         print('Status: ', self.status)
-        print('Health: ', self.health)
+        print('Stats: ', self.health)
         print('Buffs/Debuffs: ', self.modifiers)
 
     def MoveEntity(self, newpos: tuple):
@@ -25,6 +27,7 @@ class Entity:
         Returns
         None
         '''
+        assert newpos.type == tuple, "ErrorCode: invalid_var_type"
         assert len(newpos) == 2, "ErrorCode: invalid_coordinates_format"
         assert newpos[0] <= 10, "ErrorCode: invalid_x_coordinates"
         assert newpos[1] <= 10, "ErrorCode: invalid_y_coordinates"
@@ -42,38 +45,21 @@ class Room:
         self.name = name
 
     def ShowStats(self):
+        print("")
+        print("~~~~~~")
         print('Type de la pièce: ', self.rtype)
         print('Position dans le donjon: ', self.position)
         print('Entités presentes dans la pièce: ')
-        print('')
         for i in range(len(self.contents)):
             self.contents[i].ShowStats()
             print('')
         print('Numero de la pièce: ', self.name)
+        print("~~~~~~")
 
-    def AddDoor(self, ori: str):
-        '''
-        Allows the addition of a door, useful for the generation process
-        ori : str
-            which side is the door on.
-        '''
-        listValid = ['S', 'N', 'O', 'E']
-        assert ori.type == str
-        if listValid.count(ori) == 0:
-            print('Orientation de la porte non valide')
-            print('Orientations possibles:', str(listValid))
-            raise "ErrorCode: invalid_door_placement"
-        else:
-            name = 'Door ' + ori
-            if ori == 'S':
-                Door = Entity(0, (0, 5), name)
-            elif ori == 'N':
-                Door = Entity(0, (10, 5), name)
-            elif ori == 'O':
-                Door = Entity(0, (5, 0), name)
-            else:
-                Door = Entity(0, (5, 10), name)
-            self.contents.append(Door)
+    def UpdatePos(self, newPos: tuple):
+        assert newPos.type == tuple, 'ErrorCode: invalid_pos_type'
+        self.position = newPos
+
 
     def AddEntity(self, name: str, pos: tuple, etype: int):
         '''
@@ -89,7 +75,6 @@ class Room:
         None.
 
         '''
-        assert etype <= 0, "ErrorCode: invalid_entity_type"
 
         assert 0 <= pos[0] <= 10, "ErrorCode: invalid_x_coordinate"
 
@@ -113,6 +98,9 @@ class Dungeon:
         self.NumberRooms = randint(1+size, 5+size+diff)
         self.rooms = []
         self.RoomGenDone = False
+        self.CoordsGenDone = False
+        self.graphSize = size*50
+        self.list_coords = []
 
     def ShowStats(self):
         print('Nombre de pièces: ', self.NumberRooms)
@@ -120,28 +108,73 @@ class Dungeon:
         print('Liste des pièces présentes dans le dongeon: ')
         for i in range(len(self.rooms)):
             self.rooms[i].ShowStats()
+            
+    def Room(self,i):
+        '''
+        info about room  in dungeon
+        '''
+        return self.rooms[i-1].ShowStats()
+    
+    def CoordsGen(self):
+        print(self.NumberRooms)
+        coords_current = []
+        while len(self.list_coords) <= self.NumberRooms:
+            sleep(0.1)
+            coordx = randint(0, self.graphSize)
+            coordy = randint(0, self.graphSize)
+            curr_tuple = (coordx, coordy)
+            if len(coords_current) == 0:
+                coords_current.append(curr_tuple)
+                self.list_coords.append(curr_tuple)
+            else:
+                for i in range(len(coords_current)):
+                    if coords_current[i][0] <= coordx <= (coords_current[i][0] + 2) and coords_current[i][1] <= coordy <= (coords_current[i][1] + 2):
+                        print("no")
+                        break
+                    elif coords_current[i][0] >= coordx >= (coords_current[i][0] - 2) and coords_current[i][1] >= coordy >= (coords_current[i][1] - 2):
+                        print("no")
+                        break
+                    else:
+                        print("yes", curr_tuple)
+                        coords_current.append(curr_tuple)
+                        self.list_coords.append(curr_tuple)
+                    break
+        self.CoordsGenDone = True
+
+
+
 
     def RoomListGen(self):
         '''
         Generates the list of all the rooms of the Dungeon, stored in self.rooms
-        Used for MapGen
+        Used for the Map generation
 
         Returns
         -------
         None.
 
         '''
+        assert self.CoordsGenDone, "ErrorCode: no coordinates generated"
         if not self.RoomGenDone:
             for i in range(self.NumberRooms):
-                roomX = Room(randint(0, 6), (None, None), str("Room " + str(i + 1)))
+                roomX = Room(randint(0, 6), (self.list_coords[i][0], self.list_coords[i][1]), str("Room " + str(i + 1)))
                 self.rooms.append(roomX)
         self.RoomGenDone = True
-
-    def MapGen(self):
-        '''
-        Generates the dungeon map links, giving the global form of the dungeon
-        '''
-        pass
+        
+    def Show_Dungeon(self):
+        x = self.graphSize
+        y = self.graphSize
+        dungeon_curr = plt.plot(x, y)
+        for i in range(len(self.list_coords)):
+            x_room = self.list_coords[i][0]
+            y_room = self.list_coords[i][1]
+            dungeon_curr.scatter(x, y, color = 'red')  
+        dungeon_curr.show()
+        
 
 
 B = Dungeon(5, 5)
+B.CoordsGen()
+B.RoomListGen()
+B.ShowStats()
+B.Show_Dungeon()
