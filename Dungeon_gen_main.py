@@ -1,6 +1,8 @@
 from random import randint
 from time import sleep
 import matplotlib.pyplot as plt
+from math import sqrt
+import numpy as np
 
 
 class Entity:
@@ -95,12 +97,13 @@ class Dungeon:
     def __init__(self, size: int, diff: int):
         self.Dsize = size
         self.Ddiff = diff
-        self.NumberRooms = randint(1+size, 5+size+diff)
+        self.NumberRooms = randint(3 + size, 5 + size + diff)
         self.rooms = []
         self.RoomGenDone = False
         self.CoordsGenDone = False
-        self.graphSize = size*50
+        self.graphSize = size*50*(diff*0.5)
         self.list_coords = []
+        self.relations = []
 
     def ShowStats(self):
         print('Nombre de pièces: ', self.NumberRooms)
@@ -108,40 +111,62 @@ class Dungeon:
         print('Liste des pièces présentes dans le dongeon: ')
         for i in range(len(self.rooms)):
             self.rooms[i].ShowStats()
-            
+        print(self.relations)
+
     def Room(self,i):
         '''
         info about room  in dungeon
         '''
         return self.rooms[i-1].ShowStats()
-    
+
     def CoordsGen(self):
         print(self.NumberRooms)
+        limit = 0.03*self.graphSize
+        print(limit)
         coords_current = []
         while len(self.list_coords) <= self.NumberRooms:
-            sleep(0.1)
             coordx = randint(0, self.graphSize)
             coordy = randint(0, self.graphSize)
             curr_tuple = (coordx, coordy)
+            print("ok")
+            coord_ok = True
             if len(coords_current) == 0:
                 coords_current.append(curr_tuple)
                 self.list_coords.append(curr_tuple)
             else:
                 for i in range(len(coords_current)):
-                    if coords_current[i][0] <= coordx <= (coords_current[i][0] + 2) and coords_current[i][1] <= coordy <= (coords_current[i][1] + 2):
-                        print("no")
-                        break
-                    elif coords_current[i][0] >= coordx >= (coords_current[i][0] - 2) and coords_current[i][1] >= coordy >= (coords_current[i][1] - 2):
-                        print("no")
-                        break
-                    else:
-                        print("yes", curr_tuple)
-                        coords_current.append(curr_tuple)
-                        self.list_coords.append(curr_tuple)
-                    break
+                    coord_checked_x = coords_current[i][0]
+                    coord_checked_y = coords_current[i][1]
+                    distance = sqrt((coord_checked_x - coordx)**2 + (coord_checked_y - coordy)**2)
+                    print(distance)
+                    if distance < limit:
+                        coord_ok = False
+                if coord_ok:
+                    print("yes", curr_tuple)
+                    coords_current.append(curr_tuple)
+                    self.list_coords.append(curr_tuple)
+                else:
+                    print("no")
+
         self.CoordsGenDone = True
 
-
+    def LinkGen(self):
+        coords = self.list_coords.copy()
+        curr_coord = None
+        for i in range(len(coords)-1):
+            dist = []
+            curr_coord = coords[i]
+            for k in range(len(coords)):
+                if k==i :
+                    continue
+                else:
+                    c_point = coords[k]
+                    distance = (sqrt((c_point[0] - curr_coord[0])**2 + (c_point[1] - curr_coord[1])**2))
+                    dist.append((distance,list(c_point)))
+            dist.sort()
+            closest = (list(curr_coord), dist[0][1], dist[1][1], dist[2][1])
+            self.relations.append(closest)
+        return
 
 
     def RoomListGen(self):
@@ -160,21 +185,41 @@ class Dungeon:
                 roomX = Room(randint(0, 6), (self.list_coords[i][0], self.list_coords[i][1]), str("Room " + str(i + 1)))
                 self.rooms.append(roomX)
         self.RoomGenDone = True
-        
+
     def Show_Dungeon(self):
         x = self.graphSize
         y = self.graphSize
-        dungeon_curr = plt.plot(x, y)
+        x_room = []
+        y_room = []
+        line_x = []
+        line_y = []
+        plt.plot(x, y)
         for i in range(len(self.list_coords)):
-            x_room = self.list_coords[i][0]
-            y_room = self.list_coords[i][1]
-            dungeon_curr.scatter(x, y, color = 'red')  
-        dungeon_curr.show()
-        
+            x_room.append(self.list_coords[i][0])
+            y_room.append(self.list_coords[i][1])
+        plt.scatter(x_room, y_room, color = 'red')
+        for i in range(len(x_room)):
+            plt.annotate('Room' + str(i),(x_room[i], y_room[i]))
+            for i in range(len(self.relations)):
+                line_x = []
+                line_y = []
+                line_x.append(self.relations[i][0][0])
+                line_y.append(self.relations[i][0][1])
+                line_x.append(self.relations[i][0][0])
+                line_y.append(self.relations[i][0][1])
+                for k in range(1,4):
+                    line_x.pop()
+                    line_y.pop()
+                    line_x.append(self.relations[i][k][0])
+                    line_y.append(self.relations[i][k][1])
+                    plt.plot(line_x,line_y,)
+        plt.show()
 
 
-B = Dungeon(5, 5)
+
+B = Dungeon(randint(1,10),randint(1, 10))
 B.CoordsGen()
 B.RoomListGen()
+B.LinkGen()
 B.ShowStats()
 B.Show_Dungeon()
